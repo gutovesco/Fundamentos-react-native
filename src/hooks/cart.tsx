@@ -30,23 +30,63 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const product = await AsyncStorage.getItem('@Gobarber:product');
+
+      if (product) {
+        setProducts(JSON.parse(product));
+      }
     }
 
     loadProducts();
-  }, []);
+  }, [products]);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  const increment = useCallback(
+    async id => {
+      const productIndex = products.findIndex(prod => prod.id === id);
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      if (productIndex < 0) {
+        throw new Error('Product not provided');
+      }
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      const updateProduct = [...products];
+      updateProduct[productIndex].quantity += 1;
+      setProducts(updateProduct);
+    },
+    [products],
+  );
+
+  const decrement = useCallback(
+    async id => {
+      const productIndex = products.findIndex(prod => prod.id === id);
+
+      if (productIndex < 0) {
+        throw new Error('Product not provided');
+      }
+
+      const updateProduct = [...products];
+      updateProduct[productIndex].quantity -= 1;
+      setProducts(updateProduct);
+    },
+    [products],
+  );
+
+  const addToCart = useCallback(
+    async product => {
+      const productId = products.findIndex(prod => prod.id === product.id);
+
+      if (productId >= 0) {
+        increment(product.id);
+        await AsyncStorage.setItem(
+          '@desafio8:product',
+          JSON.stringify(products),
+        );
+      } else {
+        const newProd = { ...product, quantity: 1 };
+        setProducts(oldProd => [...oldProd, newProd]);
+      }
+    },
+    [increment, products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
